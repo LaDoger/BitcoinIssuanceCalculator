@@ -60,6 +60,13 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             color: #000000;
+            box-sizing: border-box; /* Ensures padding/border are included in the element's width */
+            min-height: 42px; /* Enforces a minimum height for consistency across all inputs */
+        }
+        /* Removes native iOS styling to allow custom CSS to apply correctly */
+        input[type="datetime-local"] {
+            -webkit-appearance: none;
+            appearance: none;
         }
         input::placeholder {
             color: #000000;
@@ -92,7 +99,6 @@
             }
             input {
                 width: 100%;
-                box-sizing: border-box;
             }
         }
     </style>

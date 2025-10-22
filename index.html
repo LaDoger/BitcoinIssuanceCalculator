@@ -270,7 +270,8 @@
             if (ts === null) return '';
             const currentTs = Math.floor(Date.now() / 1000);
             const days = Math.floor(Math.abs(currentTs - ts) / 86400); // Round down
-            return currentTs >= ts ? `${days} Days ago` : `${days} Days from now`;
+            const formattedDays = formatNumberWithCommas(days);
+            return currentTs >= ts ? `${formattedDays} Days ago` : `${formattedDays} Days from now`;
         }
 
         function updateFields(source) {
@@ -338,7 +339,7 @@
                 refTs = Math.floor(Date.now() / 1000);
                 currentBlockInput.value = refBlock.toLocaleString();
             } catch (error) {
-                console.error("Could not fetch live data, using fallback values:", error);
+                console.error("Could not fetch live, using fallback values:", error);
                 refBlock = fallbackRefBlock;
                 refTs = fallbackRefTs;
                 currentBlockInput.value = "N/A";

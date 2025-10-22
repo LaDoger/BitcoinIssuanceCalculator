@@ -1,2 +1,2 @@
 # BitcoinIssuanceCalculator
-Calculates estimated Bitcoin mining milestones
+Calculate estimated Bitcoin mining milestones

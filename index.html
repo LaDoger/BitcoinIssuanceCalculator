@@ -109,11 +109,11 @@
     <h1>Bitcoin Issuance Calculator</h1>
     <div class="input-group">
         <label for="block">Block Height:</label>
-        <input type="number" id="block" min="0" step="1" value="923999">
+        <input type="text" id="block" value="923,999">
     </div>
     <div class="input-group">
         <label for="btc">BTC Mined:</label>
-        <input type="number" id="btc" step="any" value="19950000">
+        <input type="text" id="btc" value="19,950,000">
     </div>
     <div class="input-group">
         <label for="percent">% of Supply:</label>
@@ -155,6 +155,19 @@
             minute: '2-digit',
             hour12: true
         });
+
+        function formatNumberWithCommas(num) {
+            if (num === null || num === undefined) return '';
+            const parts = num.toString().split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return parts.join('.');
+        }
+
+        function parseNumberWithCommas(str) {
+            if (typeof str !== 'string') return str;
+            // Return as a number, not a float, to preserve integer precision
+            return str.replace(/,/g, '');
+        }
 
         function calculateBtcFromBlock(h) {
             if (isNaN(h) || h < 0) return null;
@@ -202,17 +215,15 @@
 
         function calculateTsFromBlock(h) {
             if (isNaN(h) || h < 0) return null;
-            // Calculate timestamp based on the live/fallback reference
             const ts = refTs + (h - refBlock) * avgBlockTime;
             return Math.floor(ts / 60) * 60; // Round down to nearest minute
         }
 
         function calculateBlockFromTs(ts) {
             if (isNaN(ts)) return null;
-            const flooredTs = Math.floor(ts / 60) * 60; // Round down to nearest minute
+            const flooredTs = Math.floor(ts / 60) * 60;
             const delta = flooredTs - refTs;
             const blocksDelta = Math.floor(delta / avgBlockTime);
-            // Calculate block height based on the live/fallback reference
             const h = refBlock + blocksDelta;
             return h >= 0 ? h : null;
         }
@@ -272,143 +283,94 @@
                 const howLongInput = document.getElementById('howlong');
 
                 let h;
+                let btc;
+
                 if (source === 'block') {
-                    const blockVal = blockInput.value;
-                    if (blockVal === '') {
-                        percentInput.value = calculatePercentSupply(parseFloat(btcInput.value));
-                        howLongInput.value = '';
-                        return;
-                    }
+                    const blockVal = parseNumberWithCommas(blockInput.value);
+                    if (blockVal === '') return;
                     h = parseInt(blockVal);
-                    if (isNaN(h) || h < 0 || !Number.isInteger(h)) {
-                        blockInput.value = '';
-                        btcInput.value = '';
-                        percentInput.value = '';
-                        tsInput.value = '';
-                        howLongInput.value = '';
-                        return;
-                    }
-                    const btc = calculateBtcFromBlock(h);
-                    btcInput.value = formatBtc(btc);
+                    if (isNaN(h) || h < 0) return;
+                    btc = calculateBtcFromBlock(h);
+                    btcInput.value = formatNumberWithCommas(formatBtc(btc));
                     percentInput.value = calculatePercentSupply(btc);
-                    const ts = calculateTsFromBlock(h);
-                    tsInput.value = formatTsToDatetimeLocal(ts);
-                    howLongInput.value = calculateHowLong(ts);
                 } else if (source === 'btc') {
                     const btcValStr = btcInput.value;
-                    if (btcValStr === '') {
-                        percentInput.value = '';
-                        howLongInput.value = '';
-                        return;
-                    }
-                    const btcVal = parseFloat(btcValStr);
-                    h = calculateBlockFromBtc(btcVal);
-                    if (h === null) {
-                        blockInput.value = '';
-                        btcInput.value = '';
-                        percentInput.value = '';
-                        tsInput.value = '';
-                        howLongInput.value = '';
-                        return;
-                    }
-                    blockInput.value = h;
-                    percentInput.value = calculatePercentSupply(btcVal);
-                    const ts = calculateTsFromBlock(h);
-                    tsInput.value = formatTsToDatetimeLocal(ts);
-                    howLongInput.value = calculateHowLong(ts);
+                    if (btcValStr === '') return;
+                    btc = parseFloat(parseNumberWithCommas(btcValStr));
+                    h = calculateBlockFromBtc(btc);
+                    if (h === null) return;
+                    blockInput.value = formatNumberWithCommas(h);
+                    percentInput.value = calculatePercentSupply(btc);
                 } else if (source === 'percent') {
-                    const percentValStr = percentInput.value;
-                    if (percentValStr === '') {
-                        btcInput.value = formatBtc(calculateBtcFromPercent(0));
-                        howLongInput.value = '';
-                        return;
-                    }
-                    const percentVal = parseFloat(percentValStr);
-                    const btcVal = calculateBtcFromPercent(percentVal);
-                    if (btcVal === null) {
-                        blockInput.value = '';
-                        btcInput.value = '';
-                        percentInput.value = '';
-                        tsInput.value = '';
-                        howLongInput.value = '';
-                        return;
-                    }
-                    h = calculateBlockFromBtc(btcVal);
-                    blockInput.value = h;
-                    btcInput.value = formatBtc(btcVal);
-                    const ts = calculateTsFromBlock(h);
-                    tsInput.value = formatTsToDatetimeLocal(ts);
-                    howLongInput.value = calculateHowLong(ts);
+                    const percentVal = parseFloat(percentInput.value);
+                    if (isNaN(percentVal)) return;
+                    btc = calculateBtcFromPercent(percentVal);
+                    h = calculateBlockFromBtc(btc);
+                    if (h === null) return;
+                    blockInput.value = formatNumberWithCommas(h);
+                    btcInput.value = formatNumberWithCommas(formatBtc(btc));
                 } else if (source === 'datetime') {
-                    const tsValStr = tsInput.value;
-                    if (tsValStr === '') {
-                        percentInput.value = calculatePercentSupply(parseFloat(btcInput.value));
-                        howLongInput.value = '';
-                        return;
-                    }
-                    const tsVal = parseDatetimeLocalToTs(tsValStr);
+                    const tsVal = parseDatetimeLocalToTs(tsInput.value);
+                    if (tsVal === null) return;
                     h = calculateBlockFromTs(tsVal);
-                    if (h === null) {
-                        blockInput.value = '';
-                        btcInput.value = '';
-                        percentInput.value = '';
-                        tsInput.value = '';
-                        howLongInput.value = '';
-                        return;
-                    }
-                    blockInput.value = h;
-                    const btc = calculateBtcFromBlock(h);
-                    btcInput.value = formatBtc(btc);
+                    if (h === null) return;
+                    btc = calculateBtcFromBlock(h);
+                    blockInput.value = formatNumberWithCommas(h);
+                    btcInput.value = formatNumberWithCommas(formatBtc(btc));
                     percentInput.value = calculatePercentSupply(btc);
                     howLongInput.value = calculateHowLong(tsVal);
+                    return; // Skip final update for datetime as it's already handled
                 }
 
                 const ts = calculateTsFromBlock(h);
-                const formattedDate = etFormatter.format(new Date(ts * 1000)) + ' (ET)';
-                tsInput.setAttribute('data-display', formattedDate);
+                tsInput.value = formatTsToDatetimeLocal(ts);
+                howLongInput.value = calculateHowLong(ts);
             }, 300);
         }
 
-        // Main function to initialize the app
         async function initializeApp() {
             const currentBlockInput = document.getElementById('current_block');
             try {
                 const response = await fetch('https://blockchain.info/q/getblockcount');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const blockCount = await response.text();
-                // Use live data for estimations
                 refBlock = parseInt(blockCount, 10);
-                refTs = Math.floor(Date.now() / 1000); // User's current time
+                refTs = Math.floor(Date.now() / 1000);
                 currentBlockInput.value = refBlock.toLocaleString();
             } catch (error) {
                 console.error("Could not fetch live data, using fallback values:", error);
-                // Use fallback data if API fails
                 refBlock = fallbackRefBlock;
                 refTs = fallbackRefTs;
                 currentBlockInput.value = "N/A";
             }
 
-            // Set initial placeholder values for the calculator
             const tsInput = document.getElementById('datetime');
             const howLongInput = document.getElementById('howlong');
-            const percentInput = document.getElementById('percent');
-            const initialTs = 1763394840; // Oct 23 2025 10:14 AM ET
-            const initialBtc = 19950000;
+            const initialTs = 1763394840;
             tsInput.value = formatTsToDatetimeLocal(initialTs);
-            tsInput.setAttribute('data-display', etFormatter.format(new Date(initialTs * 1000)) + ' (ET)');
             howLongInput.value = calculateHowLong(initialTs);
-            percentInput.value = calculatePercentSupply(initialBtc);
 
-            // Attach event listeners after reference data is set
+            const blockInput = document.getElementById('block');
+            const btcInput = document.getElementById('btc');
+
             document.getElementById('block').addEventListener('input', () => updateFields('block'));
             document.getElementById('btc').addEventListener('input', () => updateFields('btc'));
             document.getElementById('percent').addEventListener('input', () => updateFields('percent'));
             document.getElementById('datetime').addEventListener('input', () => updateFields('datetime'));
+
+            [blockInput, btcInput].forEach(input => {
+                input.addEventListener('focus', (e) => {
+                    e.target.value = parseNumberWithCommas(e.target.value);
+                });
+                input.addEventListener('blur', (e) => {
+                    const numValue = parseFloat(parseNumberWithCommas(e.target.value));
+                    if (!isNaN(numValue)) {
+                        e.target.value = formatNumberWithCommas(e.target.value);
+                    }
+                });
+            });
         }
 
-        // Run the initialization function when the script loads
         initializeApp();
     </script>
 </body>

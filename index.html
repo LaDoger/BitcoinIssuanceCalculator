@@ -109,7 +109,7 @@
     <h1>Bitcoin Issuance Calculator</h1>
     <div class="input-group">
         <label for="block">Block Height:</label>
-        <input type="text" id="block" value="923,999">
+        <input type="text" id="block" value="939,999">
     </div>
     <div class="input-group">
         <label for="btc">BTC Mined:</label>
@@ -125,7 +125,7 @@
     </div>
     <div class="input-group">
         <label for="datetime">Est. Date (ET):</label>
-        <input type="datetime-local" id="datetime" step="60">
+        <input type="datetime-local" id="datetime" step="3600">
     </div>
     <div class="input-group">
         <label for="howlong">How Long:</label>
@@ -370,6 +370,9 @@
                     }
                 });
             });
+
+            // Initialize all fields based on the default block height
+            updateFields('block');
         }
 
         initializeApp();
